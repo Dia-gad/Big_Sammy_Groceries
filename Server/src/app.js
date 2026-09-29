@@ -8,13 +8,18 @@ const wishlistRoutes = require('./routes/wishlistRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const adminOrderRoutes = require('./routes/adminOrderRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -23,6 +28,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/api/health', (req, res) => {
     res.status(200).json({
