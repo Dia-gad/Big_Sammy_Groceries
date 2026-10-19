@@ -18,7 +18,17 @@ const checkoutValidator = [
         .isInt({ min: 1 })
         .withMessage(
             'Address ID must be a valid positive integer'
-        ),
+        )
+        .toInt(),
+
+
+    body('delivery_scheduled_at')
+        .optional({ values: 'null' })
+        .isISO8601()
+        .withMessage(
+            'Delivery time must be a valid date and time'
+        )
+        .toDate(),
 
 
     body('notes')

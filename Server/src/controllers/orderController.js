@@ -5,6 +5,10 @@ const {
     getOrderStatus
 } = require('../services/orderService');
 
+const {
+    cancelOrder
+} = require('../services/orderCancellationService');
+
 
 const checkout = async (req, res, next) => {
     try {
@@ -76,9 +80,29 @@ const getStatus = async (req, res, next) => {
     }
 };
 
+const cancelMyOrder = async (req, res, next) => {
+    try {
+        const { orderId } = req.params;
+
+        const result = await cancelOrder({
+            orderId: Number(orderId),
+            userId: req.user.userId
+        });
+
+        res.status(200).json({
+            success: true,
+            message: result.message,
+            data: result.order
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     checkout,
     getOrders,
     getOrder,
-    getStatus
+    getStatus,
+    cancelMyOrder
 };

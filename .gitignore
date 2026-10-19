@@ -1,0 +1,25 @@
+# Dependencies and build output
+**/node_modules/
+**/dist/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local settings
+*.local
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Unrelated study documents
+Client/src/assets/Chemistry 2010 - 2018.pdf
+Client/src/assets/JAMB-PHYSICS-PAST-QUESTIONS 2016-2025.pdf

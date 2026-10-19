@@ -2,19 +2,29 @@ const express = require('express');
 
 const {
     initialize,
+    retry,
     verify,
     verifyCallback,
     webhook
 } = require('../controllers/paymentController');
 
 const {
-    initializePaymentValidator
+    initializePaymentValidator,
+    retryPaymentValidator
 } = require('../validators/paymentValidator');
 
 const authenticate = require('../middleware/auth');
 const validate = require('../middleware/validate');
 
 const router = express.Router();
+
+router.post(
+    '/retry',
+    authenticate,
+    retryPaymentValidator,
+    validate,
+    retry
+);
 
 router.post(
     '/initialize',

@@ -1,17 +1,17 @@
 const { body } = require('express-validator');
 
 const addToCartValidator = [
-    body('product_id')
+    body('variantId')
         .notEmpty()
-        .withMessage('Product ID is required')
+        .withMessage('Variant ID is required')
         .isInt({ min: 1 })
-        .withMessage('Product ID must be a valid positive integer'),
+        .withMessage('Variant ID must be a positive integer'),
 
     body('quantity')
         .notEmpty()
         .withMessage('Quantity is required')
         .isInt({ min: 1 })
-        .withMessage('Quantity must be at least 1'),
+        .withMessage('Quantity must be at least 1')
 ];
 
 const updateCartValidator = [
@@ -19,10 +19,10 @@ const updateCartValidator = [
         .notEmpty()
         .withMessage('Quantity is required')
         .isInt({ min: 1 })
-        .withMessage('Quantity must be at least 1'),
+        .withMessage('Quantity must be at least 1')
 ];
 
 module.exports = {
     addToCartValidator,
-    updateCartValidator,
+    updateCartValidator
 };

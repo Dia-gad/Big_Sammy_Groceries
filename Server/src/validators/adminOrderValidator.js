@@ -1,4 +1,11 @@
-const { body } = require('express-validator');
+const { body, param } = require('express-validator');
+
+const orderIdValidator = [
+    param('orderId')
+        .isInt({ min: 1 })
+        .withMessage('Order ID must be a valid positive integer')
+        .toInt()
+];
 
 const updateOrderStatusValidator = [
     body('status')
@@ -17,6 +24,17 @@ const updateOrderStatusValidator = [
         .withMessage('Invalid order status')
 ];
 
+const updateDeliveryTimeValidator = [
+    body('delivery_scheduled_at')
+        .notEmpty()
+        .withMessage('Delivery time is required')
+        .isISO8601()
+        .withMessage('Delivery time must be a valid date and time')
+        .toDate()
+];
+
 module.exports = {
-    updateOrderStatusValidator
+    orderIdValidator,
+    updateOrderStatusValidator,
+    updateDeliveryTimeValidator
 };

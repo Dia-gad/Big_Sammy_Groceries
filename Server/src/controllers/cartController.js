@@ -1,19 +1,20 @@
 const {
-    addToCart,
-    getMyCart,
-    updateCartItem,
-    removeCartItem,
+    addProductToCart,
+    getCart,
+    updateCart,
+    removeFromCart,
 } = require('../services/cartService');
 
-const addProductToCart = async (req, res, next) => {
-    try {
-        const { product_id, quantity } = req.body;
 
-        const cartItem = await addToCart(
-            req.user.userId,
-            product_id,
+const addProductToCartController = async (req, res, next) => {
+    try {
+        const { variantId, quantity } = req.body;
+
+        const cartItem = await addProductToCart({
+            userId: req.user.userId,
+            variantId,
             quantity
-        );
+        });
 
         res.status(201).json({
             success: true,
@@ -25,9 +26,10 @@ const addProductToCart = async (req, res, next) => {
     }
 };
 
-const getCart = async (req, res, next) => {
+
+const getMyCart = async (req, res, next) => {
     try {
-        const cart = await getMyCart(req.user.userId);
+        const cart = await getCart(req.user.userId);
 
         res.status(200).json({
             success: true,
@@ -38,16 +40,17 @@ const getCart = async (req, res, next) => {
     }
 };
 
-const updateCart = async (req, res, next) => {
+
+const updateCartItem = async (req, res, next) => {
     try {
         const { quantity } = req.body;
-        const { cartItemId } = req.params;
+        const { variantId } = req.params;
 
-        const cartItem = await updateCartItem(
-            req.user.userId,
-            cartItemId,
+        const cartItem = await updateCart({
+            userId: req.user.userId,
+            variantId,
             quantity
-        );
+        });
 
         res.status(200).json({
             success: true,
@@ -59,14 +62,15 @@ const updateCart = async (req, res, next) => {
     }
 };
 
-const removeFromCart = async (req, res, next) => {
-    try {
-        const { cartItemId } = req.params;
 
-        const cartItem = await removeCartItem(
-            req.user.userId,
-            cartItemId
-        );
+const removeCartItem = async (req, res, next) => {
+    try {
+        const { variantId } = req.params;
+
+        const cartItem = await removeFromCart({
+            userId: req.user.userId,
+            variantId
+        });
 
         res.status(200).json({
             success: true,
@@ -78,9 +82,10 @@ const removeFromCart = async (req, res, next) => {
     }
 };
 
+
 module.exports = {
-    addProductToCart,
-    getCart,
-    updateCart,
-    removeFromCart,
+    addProductToCart: addProductToCartController,
+    getCart: getMyCart,
+    updateCart: updateCartItem,
+    removeFromCart: removeCartItem,
 };

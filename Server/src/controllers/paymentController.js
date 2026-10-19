@@ -7,6 +7,10 @@ const {
     handlePaystackWebhook
 } = require('../services/paymentService');
 
+const {
+    handlePaystackRefundWebhook
+} = require('../services/refundService');
+
 const verifyCallback = async (req, res, next) => {
     try {
         const { reference } = req.query;
@@ -105,6 +109,23 @@ const webhook = async (req, res, next) => {
             });
         }
 
+         if (
+            req.body.event === 'refund.pending' ||
+            req.body.event === 'refund.processing' ||
+            req.body.event === 'refund.needs-attention' ||
+            req.body.event === 'refund.failed' ||
+            req.body.event === 'refund.processed'
+        ) {
+            const result = await handlePaystackRefundWebhook(req.body);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Refund webhook processed',
+                data: result
+            });
+        }
+
+
         const result = await handlePaystackWebhook(req.body);
 
         return res.status(200).json({
@@ -116,8 +137,28 @@ const webhook = async (req, res, next) => {
     }
 };
 
+const retry = async (req, res, next) => {
+    try {
+        const { orderId } = req.body;
+
+        const result = await initializePayment(
+            req.user.userId,
+            orderId
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Payment retry initialized successfully',
+            data: result
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     initialize,
+    retry,
     verify,
     verifyCallback,
     webhook

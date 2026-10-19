@@ -1,5 +1,10 @@
 const pool = require('../config/database');
 
+
+// ---------------------------------------------------------
+// Get all orders
+// ---------------------------------------------------------
+
 const getAllOrders = async () => {
     const result = await pool.query(
         `SELECT
@@ -13,6 +18,7 @@ const getAllOrders = async () => {
             o.status,
             o.fulfillment_method,
             o.address_id,
+            o.delivery_scheduled_at,
             o.delivery_fee,
             o.subtotal,
             o.total_amount,
@@ -29,6 +35,11 @@ const getAllOrders = async () => {
     return result.rows;
 };
 
+
+// ---------------------------------------------------------
+// Get one order by ID
+// ---------------------------------------------------------
+
 const getOrderById = async (orderId) => {
     const orderResult = await pool.query(
         `SELECT
@@ -42,6 +53,7 @@ const getOrderById = async (orderId) => {
             o.status,
             o.fulfillment_method,
             o.address_id,
+            o.delivery_scheduled_at,
             o.delivery_fee,
             o.subtotal,
             o.total_amount,
@@ -68,6 +80,7 @@ const getOrderById = async (orderId) => {
         `SELECT
             id,
             product_id,
+            variant_id,
             product_name,
             quantity,
             unit_price,
@@ -85,7 +98,13 @@ const getOrderById = async (orderId) => {
     };
 };
 
+
+// ---------------------------------------------------------
+// Update order status
+// ---------------------------------------------------------
+
 const updateOrderStatus = async (orderId, newStatus) => {
+
     const orderResult = await pool.query(
         `SELECT
             id,
@@ -125,13 +144,16 @@ const updateOrderStatus = async (orderId, newStatus) => {
             ? deliveryTransitions
             : pickupTransitions;
 
-    const allowedNextStatuses = transitions[order.status] || [];
+    const allowedNextStatuses =
+        transitions[order.status] || [];
 
     if (!allowedNextStatuses.includes(newStatus)) {
         const error = new Error(
             `Cannot change order status from ${order.status} to ${newStatus}`
         );
+
         error.statusCode = 400;
+
         throw error;
     }
 
@@ -153,8 +175,175 @@ const updateOrderStatus = async (orderId, newStatus) => {
     return updatedResult.rows[0];
 };
 
+
+// ---------------------------------------------------------
+// Update delivery scheduled time
+//
+// Only Admin and Manager routes should call this service.
+//
+// Business rule:
+// New delivery time must be at least 1 hour from the
+// current server time.
+// ---------------------------------------------------------
+
+const updateDeliveryTime = async (
+    orderId,
+    deliveryScheduledAt
+) => {
+
+    // -----------------------------------------------------
+    // 1. Validate requested delivery time
+    // -----------------------------------------------------
+
+    if (!deliveryScheduledAt) {
+        const error = new Error(
+            'Delivery time is required'
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+    }
+
+
+    const requestedDeliveryTime =
+        new Date(deliveryScheduledAt);
+
+
+    if (Number.isNaN(requestedDeliveryTime.getTime())) {
+        const error = new Error(
+            'Delivery time must be a valid date and time'
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+    }
+
+
+    // -----------------------------------------------------
+    // 2. New delivery time must be at least 1 hour away
+    // -----------------------------------------------------
+
+    const minimumDeliveryTime =
+        new Date(Date.now() + 60 * 60 * 1000);
+
+
+    if (requestedDeliveryTime < minimumDeliveryTime) {
+        const error = new Error(
+            'Delivery time must be at least 1 hour from now'
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+    }
+
+
+    // -----------------------------------------------------
+    // 3. Get the order
+    // -----------------------------------------------------
+
+    const orderResult = await pool.query(
+        `SELECT
+            id,
+            order_number,
+            status,
+            fulfillment_method,
+            delivery_scheduled_at,
+            payment_status
+         FROM orders
+         WHERE id = $1`,
+        [orderId]
+    );
+
+
+    if (orderResult.rows.length === 0) {
+        const error = new Error(
+            'Order not found'
+        );
+
+        error.statusCode = 404;
+
+        throw error;
+    }
+
+
+    const order = orderResult.rows[0];
+
+
+    // -----------------------------------------------------
+    // 4. Delivery time only applies to delivery orders
+    // -----------------------------------------------------
+
+    if (order.fulfillment_method !== 'delivery') {
+        const error = new Error(
+            'Delivery time can only be changed for delivery orders'
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+    }
+
+
+    // -----------------------------------------------------
+    // 5. Do not change completed/cancelled orders
+    // -----------------------------------------------------
+
+    const lockedStatuses = [
+        'delivered',
+        'cancelled',
+        'picked_up'
+    ];
+
+
+    if (lockedStatuses.includes(order.status)) {
+        const error = new Error(
+            `Delivery time cannot be changed when order status is ${order.status}`
+        );
+
+        error.statusCode = 400;
+
+        throw error;
+    }
+
+
+    // -----------------------------------------------------
+    // 6. Update delivery time
+    // -----------------------------------------------------
+
+    const updatedResult = await pool.query(
+        `UPDATE orders
+         SET delivery_scheduled_at = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING
+            id,
+            order_number,
+            status,
+            fulfillment_method,
+            delivery_scheduled_at,
+            payment_status,
+            updated_at`,
+        [
+            requestedDeliveryTime,
+            orderId
+        ]
+    );
+
+
+    return updatedResult.rows[0];
+};
+
+
+// ---------------------------------------------------------
+// Exports
+// ---------------------------------------------------------
+
 module.exports = {
     getAllOrders,
     getOrderById,
-    updateOrderStatus
+    updateOrderStatus,
+    updateDeliveryTime
 };

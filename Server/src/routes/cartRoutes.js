@@ -17,14 +17,16 @@ const authenticate = require('../middleware/auth');
 
 const router = express.Router();
 
-// Add product to cart
+
+// Add product variant to cart
 router.post(
-    '/',
+    '/items',
     authenticate,
     addToCartValidator,
     validate,
     addProductToCart
 );
+
 
 // Get my cart
 router.get(
@@ -33,20 +35,23 @@ router.get(
     getCart
 );
 
+
 // Update cart item
 router.put(
-    '/:cartItemId',
+    '/items/:variantId',
     authenticate,
     updateCartValidator,
     validate,
     updateCart
 );
 
+
 // Remove cart item
 router.delete(
-    '/:cartItemId',
+    '/items/:variantId',
     authenticate,
     removeFromCart
 );
+
 
 module.exports = router;

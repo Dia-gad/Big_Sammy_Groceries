@@ -5,7 +5,8 @@ const addToWishlistValidator = [
         .notEmpty()
         .withMessage('Product ID is required')
         .isInt({ min: 1 })
-        .withMessage('Product ID must be a valid positive integer')
+    .withMessage('Product ID must be a valid positive integer')
+    .toInt()
 ];
 
 module.exports = {
